@@ -1,2 +1,2 @@
-# Mis habitos
+# Habitos
 Rutina y habitos 
