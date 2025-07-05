@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mis Hábitos</title>
+  <style>
+  body {
+  font-family: sans-serif;
+  padding: 20px;
+  background: #f2f2f2;}
+  h1 { 
+    color: #4CAF50; 
+}
+input, button {
+  margin: 5px 0;
+  padding: 8px;
+}
+.habit {
+  margin: 10px 0;
+  background: white;
+  padding: 10px;
+  border-radius: 5px;}
+  </style>
+  <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4CAF50">
+</head>
+<body>
+<h1>Mis Hábitos Diarios</h1>
+<div id="estadisticas" style="margin-bottom: 20px; background: #e8f5e9; padding: 15px; border-radius: 10px;">
+  <h2>📊 Estadísticas</h2>
+<p><strong>Hoy completados:</strong> <span id="completadosHoy">0</span></p>
+<div style="background: #ddd; border-radius: 8px; overflow: hidden;">
+  <div id="barraProgreso" style="height: 20px; background: #4caf50; width: 0%; transition: width 0.5s;"></div>
+</div>
+  <p><strong>Completados esta semana:</strong> <span id="completadosSemana">0</span></p>
+  <p><strong>Racha activa:</strong> <span id="rachaDias">0</span> días</p>
+</div>
+<input id="nuevoHábito" placeholder="Escribe un hábito..." />
+<div id="dias">
+  <label><input type="checkbox" value="Lunes"> Lunes</label>
+  <label><input type="checkbox" value="Martes"> Martes</label>
+  <label><input type="checkbox" value="Miércoles"> Miércoles</label>
+  <label><input type="checkbox" value="Jueves"> Jueves</label>
+  <label><input type="checkbox" value="Viernes"> Viernes</label>
+  <label><input type="checkbox" value="Sábado"> Sábado</label>
+  <label><input type="checkbox" value="Domingo"> Domingo</label>
+  </div>
+<button onclick="agregarHábito()">Agregar</button>
+<h2>📆 Tareas para hoy (<span id="hoyNombre"></span>)</h2>
+<div id="listaHoy"></div>
+
+<h3>📁 Otros hábitos</h3>
+<div id="otrosHabitos"></div>
+<script>
+  const lista = document.getElementById('lista');
+  const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const hoy = diasSemana[new Date().getDay()];
+// 🔄 Verificar si es un nuevo día
+const hoyFecha = new Date().toISOString().slice(0, 10); // formato: "2025-07-05"
+const fechaGuardada = localStorage.getItem('fechaÚltimaCarga');
+
+if (fechaGuardada !== hoyFecha) {
+  // Es un nuevo día
+  localStorage.setItem('fechaÚltimaCarga', hoyFecha);
+
+  // Reiniciar todas las casillas cuando se cargue la página
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#listaHoy input[type="checkbox"]').forEach(c => {
+      c.checked = false;
+    });
+  });
+}
+const listaHoy = document.getElementById('listaHoy');
+const otrosHabitos = document.getElementById('otrosHabitos');
+document.getElementById('hoyNombre').textContent = hoy;
+function agregarHábito() {
+  const input = document.getElementById('nuevoHábito');
+  const texto = input.value.trim();
+
+  if (texto) {
+    const diasSeleccionados = Array.from(
+      document.querySelectorAll('#dias input:checked')
+    ).map(input => input.value);
+
+    if (diasSeleccionados.length === 0) {
+      alert('Selecciona al menos un día para este hábito.');
+      return;
+    }
+
+    // Crear objeto de hábito
+    const nuevoHabito = {
+  texto: texto,
+  dias: diasSeleccionados,
+  completado: [] // ⬅️ historial de fechas donde se completó
+};
+
+    // Guardar en localStorage
+    const datosGuardados = JSON.parse(localStorage.getItem('habitos')) || [];
+    datosGuardados.push(nuevoHabito);
+    localStorage.setItem('habitos', JSON.stringify(datosGuardados));
+
+    input.value = '';
+    document.querySelectorAll('#dias input').forEach(c => c.checked = false);
+
+    // Mostrar en pantalla
+    mostrarHabito(nuevoHabito, datosGuardados.length - 1);
+  }
+}
+function eliminarHabito(index) {
+  const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+  datos.splice(index, 1);
+  localStorage.setItem('habitos', JSON.stringify(datos));
+  location.reload(); // Recarga la página para actualizar la lista
+}
+function mostrarHabito(habito, index) {
+  const div = document.createElement('div');
+  div.className = 'habit';
+
+  const hoyFecha = new Date().toISOString().slice(0, 10);
+  const marcadoHoy = habito.completado.includes(hoyFecha);
+
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = marcadoHoy;
+
+  checkbox.addEventListener('change', () => {
+    const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+    if (checkbox.checked) {
+      if (!datos[index].completado.includes(hoyFecha)) {
+        datos[index].completado.push(hoyFecha);
+      }
+    } else {
+      datos[index].completado = datos[index].completado.filter(f => f !== hoyFecha);
+    }
+    localStorage.setItem('habitos', JSON.stringify(datos));
+    calcularEstadisticas();
+  });
+
+  const contenido = `
+    <strong>${habito.texto}</strong><br>
+    <small>Días: ${habito.dias.join(', ')}</small>
+    <button onclick="eliminarHabito(${index})" style="float:right">🗑️</button>
+  `;
+
+  div.appendChild(checkbox);
+  div.insertAdjacentHTML('beforeend', contenido);
+
+  if (habito.dias.includes(hoy)) {
+    listaHoy.appendChild(div);
+  } else {
+    otrosHabitos.appendChild(div);
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const guardados = JSON.parse(localStorage.getItem('habitos')) || [];
+  guardados.forEach((habito, i) => mostrarHabito(habito, i));
+  calcularEstadisticas();
+});
+function calcularEstadisticas() {
+  const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+  const hoy = new Date();
+  const hoyFecha = hoy.toISOString().slice(0, 10);
+  let completadosHoy = 0;
+  let completadosSemana = 0;
+  let racha = 0;
+
+  let totalHoy = 0;
+
+  for (let d = 0; d < 7; d++) {
+    const fecha = new Date(hoy);
+    fecha.setDate(hoy.getDate() - d);
+    const fechaTexto = fecha.toISOString().slice(0, 10);
+    let algunoHoy = false;
+
+    datos.forEach(habito => {
+      if (habito.dias.includes(diasSemana[fecha.getDay()])) {
+        if (d === 0) totalHoy++;
+        if (habito.completado.includes(fechaTexto)) {
+          completadosSemana++;
+          if (d === 0) completadosHoy++;
+          algunoHoy = true;
+        }
+      }
+    });
+
+    if (algunoHoy && d === racha) {
+      racha++;
+    } else if (!algunoHoy) {
+      break;
+    }
+  }
+
+  // Actualizar HTML
+  document.getElementById('completadosHoy').textContent = completadosHoy;
+  document.getElementById('completadosSemana').textContent = completadosSemana;
+  document.getElementById('rachaDias').textContent = racha;
+
+  // Actualizar barra
+  const progreso = totalHoy > 0 ? Math.round((completadosHoy / totalHoy) * 100) : 0;
+  document.getElementById('barraProgreso').style.width = progreso + '%';
+
+  // Añadir emoji de motivación
+  const emoji = progreso === 100 ? '🔥' : progreso >= 50 ? '💪' : progreso > 0 ? '🙂' : '🙃';
+  document.getElementById('completadosHoy').textContent += ` ${emoji}`;
+}
+
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(reg => console.log('✅ Service Worker registrado'))
+      .catch(err => console.error('❌ Error al registrar Service Worker', err));
+  }
+</script>
+</body>
+</html>
