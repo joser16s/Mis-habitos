@@ -190,6 +190,7 @@ function calcularEstadisticas() {
       break;
     }
   }
+  
 function enviarNotificacionHabitos() {
   if (Notification.permission === 'granted') {
     const datos = JSON.parse(localStorage.getItem('habitos')) || [];
@@ -232,21 +233,27 @@ if ('Notification' in window) {
     });
   }
 }
-</script>
-<script>
   if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./service-worker.js')
-      .then(() => console.log('✅ Service Worker registrado'))
-      .catch(err => console.error('❌ Error al registrar Service Worker', err));
-  }
-  navigator.serviceWorker.ready.then(reg => {
-  if ('periodicSync' in reg) {
-    reg.periodicSync.register('actualizar-habitos', {
-      minInterval: 24 * 60 * 60 * 1000 // cada 24 horas
-    });
-  }
-});
+      .then(reg => {
+        console.log('✅ SW registrado');
+
+        // Verificar y registrar periodicSync si está disponible
+        if ('periodicSync' in reg) {
+          navigator.permissions.query({ name: 'periodic-background-sync' })
+            .then(permission => {
+              if (permission.state === 'granted') {
+                reg.periodicSync.register('actualizar-habitos', {
+                  minInterval: 24 * 60 * 60 * 1000
+                });
+              }
+            });
+        }
+      })
+      .catch(err => console.error('❌ Error al registrar SW', err));
+  });
+}
 </script>
 </body>
 </html>
