@@ -190,6 +190,27 @@ function calcularEstadisticas() {
       break;
     }
   }
+function enviarNotificacionHabitos() {
+  if (Notification.permission === 'granted') {
+    const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+    const hoy = new Date();
+    const diaHoy = diasSemana[hoy.getDay()];
+    const habitosDeHoy = datos.filter(h => h.dias.includes(diaHoy));
+    const lista = habitosDeHoy.map(h => '• ' + h.texto).join('\n');
+
+    const mensaje = habitosDeHoy.length
+      ? `Tareas para hoy:\n${lista}`
+      : '¡No tienes hábitos asignados para hoy! 🎉';
+
+    new Notification('📌 Recordatorio de hábitos', {
+      body: mensaje,
+      icon: 'icono-192.png'
+    });
+  }
+}
+
+// Llama la función al cargar
+window.addEventListener('load', enviarNotificacionHabitos);
 
   // Actualizar HTML
   document.getElementById('completadosHoy').textContent = completadosHoy;
@@ -204,7 +225,13 @@ function calcularEstadisticas() {
   const emoji = progreso === 100 ? '🔥' : progreso >= 50 ? '💪' : progreso > 0 ? '🙂' : '🙃';
   document.getElementById('completadosHoy').textContent += ` ${emoji}`;
 }
-
+if ('Notification' in window) {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(result => {
+      console.log('Permiso de notificación:', result);
+    });
+  }
+}
 </script>
 <script>
   if ('serviceWorker' in navigator) {
@@ -213,6 +240,13 @@ function calcularEstadisticas() {
       .then(() => console.log('✅ Service Worker registrado'))
       .catch(err => console.error('❌ Error al registrar Service Worker', err));
   }
+  navigator.serviceWorker.ready.then(reg => {
+  if ('periodicSync' in reg) {
+    reg.periodicSync.register('actualizar-habitos', {
+      minInterval: 24 * 60 * 60 * 1000 // cada 24 horas
+    });
+  }
+});
 </script>
 </body>
 </html>
