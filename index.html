@@ -2,30 +2,127 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Mis Hábitos</title>
+  <title>GoodHabits</title>
   <style>
-  body {
-  font-family: sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(180deg, #e3f4e1, #f9fff5);
   padding: 20px;
-  background: #f2f2f2;}
-  h1 { 
-    color: #4CAF50; 
+  max-width: 600px;
+  margin: auto;
 }
+
+h1 {
+  text-align: center;
+  color: #2e7d32;
+  margin-bottom: 20px;
+}
+h2, h3 {
+  border-bottom: 2px solid #4caf50;
+  padding-bottom: 6px;
+  margin-top: 20px;
+}
+#estadisticas {
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: transform 0.3s;
+}
+#estadisticas:hover {
+  transform: scale(1.01);
+}
+
 input, button {
-  margin: 5px 0;
-  padding: 8px;
-}
-.habit {
-  margin: 10px 0;
-  background: white;
+  width: 100%;
+  box-sizing: border-box;
   padding: 10px;
-  border-radius: 5px;}
-  </style>
+  margin: 8px 0;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+
+button {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover {
+  background: #388e3c;
+}
+
+.habit {
+  background: #fff;
+  border-left: 5px solid #4caf50;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+#barraProgreso {
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #66bb6a, #388e3c);
+  transition: width 0.6s ease;
+}
+body.modo-oscuro {
+  background: linear-gradient(180deg, #1e1e1e, #2c2c2c);
+  color: #eee;
+}
+
+body.modo-oscuro .habit {
+  background: #333;
+  border-left: 5px solid #81c784;
+}
+
+body.modo-oscuro #estadisticas {
+  background: #2e2e2e;
+  color: #1e1e1e;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); body.modo-oscuro #estadisticas h2,
+body.modo-oscuro #estadisticas p,
+body.modo-oscuro #estadisticas strong,
+body.modo-oscuro #estadisticas span {
+  color: #eee; }
+body.modo-oscuro input,
+body.modo-oscuro button {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+}
+
+body.modo-oscuro #barraProgreso {
+  background: linear-gradient(90deg, #81c784, #66bb6a);
+}
+
+.habit {
+  transition: all 0.3s ease;
+}
+.habit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+ </style>
   <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#4CAF50">
 </head>
 <body>
+  <main>
 <h1>Mis Hábitos Diarios</h1>
+<div style="text-align:right; margin-bottom: 10px;">
+  <button id="toggleModo">🌙 Activar modo oscuro</button>
+</div>
 <div id="estadisticas" style="margin-bottom: 20px; background: #e8f5e9; padding: 15px; border-radius: 10px;">
   <h2>📊 Estadísticas</h2>
 <p><strong>Hoy completados:</strong> <span id="completadosHoy">0</span></p>
@@ -46,8 +143,13 @@ input, button {
   <label><input type="checkbox" value="Domingo"> Domingo</label>
   </div>
 <button onclick="agregarHábito()">Agregar</button>
+<div id="resumenSemanal" style="display:none; padding: 15px; background: #fff3e0; border-left: 5px solid #ff9800; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.5s ease;">
+  <h2>🎯 Resumen Semanal</h2>
+  <p id="mensajeResumen"></p>
+</div>
 <h2>📆 Tareas para hoy (<span id="hoyNombre"></span>)</h2>
 <div id="listaHoy"></div>
+<button onclick="resetearHabitos()" style="background:#e53935;">🧹 Reiniciar progreso de hoy</button>
 
 <h3>📁 Otros hábitos</h3>
 <div id="otrosHabitos"></div>
@@ -112,6 +214,16 @@ function eliminarHabito(index) {
   localStorage.setItem('habitos', JSON.stringify(datos));
   location.reload(); // Recarga la página para actualizar la lista
 }
+function asignarEmoji(texto) {
+  const tx = texto.toLowerCase();
+  if (tx.includes("leer")) return "📚 " + texto;
+  if (tx.includes("meditar")) return "🧘 " + texto;
+  if (tx.includes("ejercicio") || tx.includes("correr")) return "🏃 " + texto;
+  if (tx.includes("agua") || tx.includes("hidrat")) return "💧 " + texto;
+  if (tx.includes("estudiar") || tx.includes("repasar")) return "🧠 " + texto;
+  if (tx.includes("descansar")) return "😴 " + texto;
+  return texto;
+}
 function mostrarHabito(habito, index) {
   const div = document.createElement('div');
   div.className = 'habit';
@@ -137,13 +249,20 @@ function mostrarHabito(habito, index) {
   });
 
   const contenido = `
-    <strong>${habito.texto}</strong><br>
-    <small>Días: ${habito.dias.join(', ')}</small>
-    <button onclick="eliminarHabito(${index})" style="float:right">🗑️</button>
-  `;
+  <strong>${asignarEmoji(habito.texto)}</strong><br>
+  <small>Días: ${habito.dias.join(', ')}</small>
+  <button onclick="eliminarHabito(${index})" style="float:right">🗑️</button>
+`;
 
   div.appendChild(checkbox);
   div.insertAdjacentHTML('beforeend', contenido);
+div.style.opacity = 0;
+div.style.transform = "translateY(10px)";
+setTimeout(() => {
+  div.style.transition = "all 0.5s ease";
+  div.style.opacity = 1;
+  div.style.transform = "translateY(0)";
+}, 50);
 
   if (habito.dias.includes(hoy)) {
     listaHoy.appendChild(div);
@@ -164,6 +283,9 @@ function calcularEstadisticas() {
   let completadosHoy = 0;
   let completadosSemana = 0;
   let racha = 0;
+  if (new Date().getDay() === 0) { // Domingo
+  mostrarResumenSemanal(completadosSemana, racha);
+}
 
   let totalHoy = 0;
 
@@ -212,6 +334,20 @@ function enviarNotificacionHabitos() {
 
 // Llama la función al cargar
 window.addEventListener('load', enviarNotificacionHabitos);
+if ('Notification' in window) {
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(result => {
+      console.log('Permiso de notificación:', result);
+      if (result === 'granted') {
+        enviarNotificacionHabitos(); // solo si ya se otorgó permiso
+      }
+    });
+  } else if (Notification.permission === 'granted') {
+    enviarNotificacionHabitos();
+  } else {
+    console.warn('⛔ Notificaciones bloqueadas por el usuario');
+  }
+}
 
   // Actualizar HTML
   document.getElementById('completadosHoy').textContent = completadosHoy;
@@ -254,6 +390,65 @@ if ('Notification' in window) {
       .catch(err => console.error('❌ Error al registrar SW', err));
   });
 }
+function resetearHabitos() {
+  const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+  const hoyFecha = new Date().toISOString().slice(0, 10);
+
+  datos.forEach(h => {
+    h.completado = h.completado.filter(f => f !== hoyFecha);
+  });
+
+  localStorage.setItem('habitos', JSON.stringify(datos));
+  location.reload();
+}
+function mostrarResumenSemanal(completadosSemana, racha) {
+  const mensaje = completadosSemana > 0
+    ? `¡Has completado <strong>${completadosSemana}</strong> hábitos esta semana! Racha activa: <strong>${racha}</strong> día(s). 💪`
+    : `Esta semana no se completaron hábitos... ¡la próxima será mejor! 🙌`;
+
+  const contenedor = document.getElementById('resumenSemanal');
+  const texto = document.getElementById('mensajeResumen');
+
+  texto.innerHTML = mensaje;
+  contenedor.style.display = 'block';
+  contenedor.style.opacity = 0;
+  contenedor.style.transform = 'translateY(10px)';
+
+  setTimeout(() => {
+    contenedor.style.opacity = 1;
+    contenedor.style.transform = 'translateY(0)';
+  }, 100);
+}
+function programarRecordatorioNoche() {
+  const ahora = new Date();
+  const horaActual = ahora.getHours();
+
+  if (horaActual >= 20) { // después de las 8:00 pm
+    const datos = JSON.parse(localStorage.getItem('habitos')) || [];
+    const hoyFecha = new Date().toISOString().slice(0, 10);
+    const completadosHoy = datos.filter(h => h.completado.includes(hoyFecha));
+
+    if (completadosHoy.length === 0) {
+      new Notification('⏳ No has completado ningún hábito hoy', {
+        body: '¡Dale, aún hay tiempo para marcar al menos uno! 💪',
+        icon: 'icono-192.png'
+      });
+    }
+  }
+}
+
+window.addEventListener('load', programarRecordatorioNoche);
 </script>
+<script>
+const toggleBtn = document.getElementById('toggleModo');
+
+let oscuro = false;
+toggleBtn.addEventListener('click', () => {
+  document.body.classList.toggle('modo-oscuro');
+  oscuro = !oscuro;
+  toggleBtn.textContent = oscuro ? '☀️ Desactivar modo oscuro' : '🌙 Activar modo oscuro';
+});
+</script>
+</main>
 </body>
 </html>
