@@ -1,6 +1,6 @@
 {
-  "name": "Mis Hábitos",
-  "short_name": "Hábitos",
+  "name": "GoodHabits",
+  "short_name": "GoodHabits",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f2f2f2",
